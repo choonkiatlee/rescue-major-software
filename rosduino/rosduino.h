@@ -11,15 +11,4 @@
 
 #include "globals.h"
 #include "handlers.h"
-
-/*
- * defines
- */
-
-
-
-/*
- * global variables from rosduino.ino
- */
-
-extern ros::NodeHandle nh;
+#include "odrive.h"

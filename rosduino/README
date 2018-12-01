@@ -1,3 +1,8 @@
 Install ros arduino library:
 http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup
 Other tutorials are available there too
+
+coding style:
+- because arduino ide is unwilling to hide files, libraries which do not need accessing often (mostly anything not written by us) are denoted by "z_" so that they are sorted at the end
+- anything local for a cpp file begins with "_"
+- mark anything unfinished "TODO" so that it can be found easily
