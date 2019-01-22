@@ -7,7 +7,7 @@ template<class T> inline Print& operator <<(Print &obj,     T arg) { obj.print(a
 template<>        inline Print& operator <<(Print &obj, float arg) { obj.print(arg, 4); return obj; }
 
 // Serial to the ODrive
-SoftwareSerial odrive_serial(8, 9); //RX (ODrive TX), TX (ODrive RX)
+SoftwareSerial odrive_serial(11, 12); //RX (ODrive TX), TX (ODrive RX)
 
 // ODrive object
 ODriveArduino odrive(odrive_serial);

@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/jakub/rescue-major-software/catkin_ws/install/setup.sh

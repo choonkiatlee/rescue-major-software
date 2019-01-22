@@ -21,6 +21,14 @@
 
 void _position_cb( const std_msgs::Float32& distance){
   odrive_run_fixed(0, distance.data);
+
+//      for (float ph = 0.0f; ph < 6.28318530718f; ph += 0.01f) {
+//        float pos_m0 = 20000.0f * cos(ph);
+////        float pos_m1 = 20000.0f * sin(ph);
+//        odrives[0]->SetPosition(0, pos_m0);
+////        odrive.SetPosition(1, pos_m1);
+//        delay(5);
+//      }
   digitalWrite(13, HIGH-digitalRead(13));  //toggle led
 }
 

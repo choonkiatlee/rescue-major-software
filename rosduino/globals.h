@@ -1,9 +1,9 @@
 #include <Arduino.h>
-//#include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
 #include <ros.h>
 #include "z_odrive.h"
 
-#define RAD_TO_CM 100000
+#define RAD_TO_CM 1
 #define ODRIVE_VEL_LIMIT 100000.0f
 #define ODRIVE_CURRENT_LIMIT 10.0f
 #define TRACKS_WIDTH 40.0f
@@ -13,7 +13,7 @@
 #define MOTOR_LEFT_DIR 1
 #define MOTOR_RIGHT_DIR 1
 
-#define odrive_serial Serial1
+#define odrive_serial Serial2
 //extern SoftwareSerial odrive_serial; //RX (ODrive TX), TX (ODrive RX)
 
 #define MOTOR_NUM 1

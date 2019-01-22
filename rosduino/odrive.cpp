@@ -52,11 +52,10 @@ void odrive_set_limits(int motorNumber) {
 }
 
 void odrive_init() {
-  odrive_serial.begin(115200);
-  delay(50);
-//  for (int i = 0; i < MOTOR_NUM; i++) {
-//    odrive_set_limits(i);
-//  }
+  delay(500);
+  for (int i = 0; i < MOTOR_NUM; i++) {
+    odrive_set_limits(i);
+  }
   for (int axis = 0; axis < 2; ++axis) {
     odrive_serial << "w axis" << axis << ".controller.config.vel_limit " << 22000.0f << '\n';
     odrive_serial << "w axis" << axis << ".motor.config.current_lim " << 11.0f << '\n';
@@ -88,7 +87,8 @@ void odrive_run_fixed(int motorNumber, float distance_cm) {
   ODriveArduino* odr = odrives[motorNumber];
   int motornum = motors[motorNumber];
   positions[motornum] += distance_cm / RAD_TO_CM;
-  odr->SetTrajectory(motornum, positions[motornum]);
+//  odr->SetTrajectory(motornum, positions[motornum]);
+  odr->SetPosition(motornum, positions[motornum]);
 }
 
 void odrive_run_continuous(int motorNumber, float distance_cm) {

@@ -24,9 +24,10 @@ void setup(){
 //    nh.spinOnce();
 //    delay(1);
 //  }
+  odrive_serial.begin(115200);
   digitalWrite(13, HIGH-digitalRead(13));  //toggle led
   delay(100);
-  odrive_init();
+//  odrive_init();
   digitalWrite(13, HIGH-digitalRead(13));  //toggle led
 }
 

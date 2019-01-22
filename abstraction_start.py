@@ -6,9 +6,9 @@ import time
 import math
 
 config = {
-	wheel_radius : 0.1,
-	drive_gearing : 64, # 64 means a gearing of 64 to one
-	flipper_gearing : 64
+	"wheel_radius" : 0.1,
+	"drive_gearing" : 64, # 64 means a gearing of 64 to one
+	"flipper_gearing" : 64
 }
 
 def full_reset_and_calibrate(odrv0):
@@ -56,7 +56,7 @@ def set_rps(odrv0, rps):
 	odrv0.axis0.controller.vel_setpoint = rps * 8192
 
 def set_velocity(odrv0, v):
-	rps = v * config[drive_gearing] / (2 * 3.1415 * config[wheel_radius])
+	rps = v * config["drive_gearing"] / (2 * 3.1415 * config["wheel_radius"])
 	set_rps(odrv0, rps)
 
 # Find a connected ODrive (this will block until you connect one)
