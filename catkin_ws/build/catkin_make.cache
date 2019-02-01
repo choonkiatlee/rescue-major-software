@@ -1,2 +1,0 @@
-nuc_main
--DCATKIN_DEVEL_PREFIX=/home/jakub/rescue-major-software/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/jakub/rescue-major-software/catkin_ws/install -G Unix Makefiles

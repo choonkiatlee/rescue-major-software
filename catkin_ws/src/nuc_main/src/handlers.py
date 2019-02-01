@@ -49,7 +49,7 @@ def init_handlers():
     rospy.Subscriber("send_back", msg.String, _send_back) # TEST
 
     global debug_pub
-    debug_pub = rospy.Publisher('debug', msg.String)
+    debug_pub = rospy.Publisher('debug', msg.String, queue_size=10)
 
 
 # TODO ?

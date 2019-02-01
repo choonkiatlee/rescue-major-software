@@ -1,8 +1,0 @@
-prefix=/home/jakub/rescue-major-software/catkin_ws/devel
-
-Name: nuc_main
-Description: Description of nuc_main
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/jakub/rescue-major-software/catkin_ws/devel/lib 
-Requires: 

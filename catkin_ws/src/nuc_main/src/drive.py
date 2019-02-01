@@ -25,7 +25,7 @@ def full_reset_and_calibrate_all():
             pass
     positions = []
     print("Rebooted.")
-    odrives = list(odrive.find_all())  # Reconnect to the Odrives
+    odrives = list([odrive.find_any()])  # Reconnect to the Odrives
     print("Connected.")
     for axes, my_drive in zip(CONNECTED_AXES, odrives):
         positions.append((0, 0))
@@ -101,7 +101,7 @@ def drive_distance(distance, angular_distance):
 
 
 def drive_velocity(speed, angular_speed):
-    if abs(angular_speed) < 1e-6:
+    if abs(angular_speed) > 1e-6:
         radius = speed / angular_speed
         radiusL = radius + TRACKS_SEPARATION / 2
         radiusR = radius - TRACKS_SEPARATION / 2
@@ -117,7 +117,7 @@ def drive_velocity(speed, angular_speed):
 
 def init():
     global odrives
-    odrives = list(odrive.find_all())
+    odrives = list([odrive.find_any()])
     for my_drive in odrives:
         print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
 
