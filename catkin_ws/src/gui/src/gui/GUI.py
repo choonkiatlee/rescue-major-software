@@ -1,7 +1,4 @@
 import os
-import rospy
-from std_msgs import msg
-
 
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
@@ -48,7 +45,7 @@ class GUI(Plugin):
 
     def shutdown_plugin(self):
         # TODO unregister all publishers here
-        for publisher in self._widget.publishers:
+        for publisher in self._widget.publishers.values():
             publisher.unregister()
         pass
 
