@@ -1,8 +1,8 @@
 # rescue-major-software
 Rescue Major Software
 
-Running ros:
-when it catkin_ws:
+### Running ros:
+when in catkin_ws:
 - run "catkin_make"
 - run ". ~/rescue-major-software/catkin_ws/devel/setup.bash"
 - run "roscore"
@@ -10,7 +10,7 @@ when it catkin_ws:
 
 
 
-Running the GUI:
+### Running the GUI:
 - First run:
     - After all the above, ```rosrun gui gui```
     - This will register our gui with rqt
