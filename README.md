@@ -12,9 +12,9 @@ when it catkin_ws:
 
 Running the GUI:
 - First run:
-    - After all the above, ```bash rosrun gui gui```
+    - After all the above, ```rosrun gui gui```
     - This will register our gui with rqt
 - Subsequent runs:
     - either:
-        - ```bash rqt --standalone gui```
-        - ```bash rqt``` and select RMRC GUI under the plugins window
+        - ```rqt --standalone gui```
+        - ```rqt``` and select RMRC GUI under the plugins window
