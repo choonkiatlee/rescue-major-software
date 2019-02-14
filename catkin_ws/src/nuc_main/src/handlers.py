@@ -12,21 +12,60 @@ def _position_test_cb(position):
 
 
 def _drive_commands_cb(command):
-    if command.data == 'r':
+    if chr(command.data) == 'r':
         drive.full_reset_and_calibrate_all()
     rospy.loginfo("Recieved on drive/commands: " + str(command.data))
 
 
 def _drive_distance_cb(distances):
     drive.drive_distance(distances.data[0], distances.data[1])
-    rospy.loginfo("Recieved on drive/distance: " + ' '.join(distances.data))
+    rospy.loginfo("Recieved on drive/distance: " + ' '.join(map(str, distances.data)))
+
+
+def _drive_velocity_cb(velocities):
+    drive.drive_velocity(velocities.data[0], velocities.data[1])
+    rospy.loginfo("Recieved on drive/velocity: " + ' '.join(map(str, velocities.data)))
+
+
+def _drive_vel_limits_cb(velocities):
+    drive.set_vel_limits(velocities.data)
+    rospy.loginfo("Recieved on drive/velocity_limits: " + ' '.join(map(str, velocities.data)))
+
+
+def _drive_acc_limits_cb(accs):
+    drive.set_acc_limits(accs.data)
+    rospy.loginfo("Recieved on drive/velocity_limits: " + ' '.join(map(str, accs.data)))
 
 # PUBLISHERS
 
 def debug_publish(msg_str):
     try:
         debug_pub.publish(msg_str)
-        rospy.loginfo("Sent on rosout: " + str(msg_str))
+        rospy.loginfo("Sent on debug: " + str(msg_str.data))
+    except rospy.ROSInterruptException:
+        pass
+
+def axis_states_publish(axes):
+    try:
+        msg_arr = msg.Float32MultiArray()
+        msg_arr.data = axes
+        msg_arr.layout.dim = [msg.MultiArrayDimension(), msg.MultiArrayDimension(), msg.MultiArrayDimension()]
+        msg_arr.layout.dim[0].size = len(axes)
+        msg_arr.layout.dim[1].size = len(axes[0])
+        msg_arr.layout.dim[2].size = len(axes[0][0])
+        msg_arr.layout.dim[0].stride = len(axes) * len(axes[0]) * len(axes[0][0])
+        msg_arr.layout.dim[1].stride = len(axes[0]) * len(axes[0][0])
+        msg_arr.layout.dim[2].stride = len(axes[0][0])
+        msg_arr.layout.dim[0].label = "odrives"
+        msg_arr.layout.dim[1].label = "axes"
+        msg_arr.layout.dim[2].label = "values"
+
+        print(msg_arr.data)
+
+        print(msg_arr)
+
+        axis_state_pub.publish(msg_arr)
+        # rospy.loginfo("Sent on debug: " + str(axes))
     except rospy.ROSInterruptException:
         pass
 
@@ -45,11 +84,17 @@ def init_handlers():
     rospy.Subscriber("position_test", msg.Float32, _position_test_cb)
     rospy.Subscriber("drive/commands", msg.Char, _drive_commands_cb)
     rospy.Subscriber("drive/distance", msg.Float32MultiArray, _drive_distance_cb)
+    rospy.Subscriber("drive/velocity", msg.Float32MultiArray, _drive_velocity_cb)
+    rospy.Subscriber("drive/vel_limits", msg.Float32MultiArray, _drive_vel_limits_cb)
+    rospy.Subscriber("drive/acc_limits", msg.Float32MultiArray, _drive_acc_limits_cb)
 
     rospy.Subscriber("send_back", msg.String, _send_back) # TEST
 
     global debug_pub
     debug_pub = rospy.Publisher('debug', msg.String, queue_size=10)
+
+    global axis_state_pub
+    axis_state_pub = rospy.Publisher('drive/axis_states', msg.Float32MultiArray, queue_size=10)
 
 
 # TODO ?
