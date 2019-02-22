@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 
 import odrive
 from odrive.enums import *
@@ -7,8 +7,8 @@ import math
 
 config = {
 	"wheel_radius" : 0.1,
-	"drive_gearing" : 64, # 64 means a gearing of 64 to one
-	"flipper_gearing" : 64
+	"drive_gearing" : 16, # 64 means a gearing of 64 to one
+	"flipper_gearing" : 5
 }
 
 def full_reset_and_calibrate(odrv0):
@@ -57,15 +57,27 @@ def set_rps(odrv0, rps):
 
 def set_velocity(odrv0, v):
 	rps = v * config["drive_gearing"] / (2 * 3.1415 * config["wheel_radius"])
+	print(rps * 8192)
 	set_rps(odrv0, rps)
 
 # Find a connected ODrive (this will block until you connect one)
 print("Finding an odrive...")
 my_drive = odrive.find_any()
 
-# my_drive = full_reset_and_calibrate(my_drive)
+my_drive = full_reset_and_calibrate(my_drive)
 
 # To read a value, simply read the property
-print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
+# print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
 
-set_rps(my_drive, 1)
+my_drive.axis0.controller.config.vel_limit = 500000.0
+
+print("set drive velocity in m/s or any non-number to quit")
+while(True):
+	velocity = raw_input()
+	try:
+		velocity = float(velocity)
+	except:
+		break
+	set_velocity(my_drive, float(velocity))
+
+set_velocity(my_drive, 0)

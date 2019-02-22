@@ -1,0 +1,7 @@
+# python temp files
+*.pyc
+
+
+# catkin build / dev folders
+catkin_ws/build
+catkin_ws/devel
