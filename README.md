@@ -1,6 +1,9 @@
 # rescue-major-software
 Rescue Major Software
 
+
+
+
 ### Running ros:
 when in catkin_ws:
 - run "catkin_make"
@@ -18,3 +21,13 @@ when in catkin_ws:
     - either:
         - ```rqt --standalone gui```
         - ```rqt``` and select RMRC GUI under the plugins window
+
+
+
+### Connecting to the NUC
+- Startup the NUC
+- Wait about 3-4 min for the system to start up
+- SSH into the machine
+	- ```bash
+	  ssh $(curl http://ckl41.user.srcf.net/ipaddress_broadcast.php)
+	  ```
