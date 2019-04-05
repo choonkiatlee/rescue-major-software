@@ -4,7 +4,7 @@ import odrive
 from odrive.enums import *
 import time
 import math
-import msvcrt
+#import msvcrt
 import os
 from fibre.utils import Event, Logger
 import time
@@ -17,20 +17,21 @@ config = {
 
 def full_reset_and_calibrate(odrv0):
 	"""Completely resets the Odrive, calibrates axis1 and configures axis1 to only encoder index search on startup and be ready in AXIS_STATE_CLOSED_LOOP_CONTROL"""
-	serial_no = odrv0.serial_number
+
+	odrv0 = odrive.find_any(serial_number=targetSerial)
+	print("found odrive with serial target")
+
 	odrv0.erase_configuration()
 	print("Erased [1/7]")
 	try: # Reboot causes loss of connection, use try to supress errors
 		odrv0.reboot()
 	except:
 		pass
+	print("Rebooted.")
+
+	odrv0 = odrive.find_any(serial_number=targetSerial)
 	print("Rebooted [2/7]")
-	print("Finding odrive with serial_no " + str(serial_no))
-	# odrv0 = odrive.find_any(serial_number=serial_no, logger=Logger(verbose=True)) # This should work? We should be able to connect by serial number, ghetto hack below to make sure it is same serial
-	odrv0 = odrive.find_any(); # Reconnect to odrive
-	if odrv0.serial_number != serial_no:
-		print("!!! Found the wrong odrive !!!")
-		return 0
+
 	print("Found odrive with serial " + str(odrv0.serial_number))
 	print("Connected [3/7]")
 	odrv0.axis0.motor.config.pre_calibrated = True # Set all the flags required for pre calibration
@@ -44,6 +45,8 @@ def full_reset_and_calibrate(odrv0):
 		time.sleep(0.5)
 		print(".", end="")
 	print("\nCalibration 1 complete [5/7]")
+	
+	'''
 	odrv0.axis1.motor.config.pre_calibrated = True # Set all the flags required for pre calibration
 	odrv0.axis1.encoder.config.pre_calibrated = True
 	odrv0.axis1.encoder.config.use_index = True
@@ -54,10 +57,13 @@ def full_reset_and_calibrate(odrv0):
 	while odrv0.axis1.current_state != AXIS_STATE_IDLE: # Wait for calibration to be done
 		time.sleep(0.5)
 		print(".", end="")
+	'''
 	print("\nCalibration 2 complete [7/7]")
+
 	odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-	odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+	#odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 	odrv0.save_configuration()
+
 	return odrv0
 
 def set_position(axis, pos):
@@ -84,19 +90,13 @@ def set_velocity(axis, v):
 	print(rps * 8192)
 	set_rps(axis, rps)
 
-result = [ ]
-done_signal = Event(None)
-def did_discover_object(obj):
-    print("Found an odrive maybe...")
-    result.append(obj)
-    if len(result) > 1:
-    	done_signal.set()
-odrive.find_all("usb", None, did_discover_object, done_signal, None, Logger(verbose=False))
-try:
-    done_signal.wait(timeout=30)
-finally:
-    done_signal.set() # terminate find_all
 
-for no, currOdrive in enumerate(result):
-    print(str(no) + ": " + str(currOdrive.serial_number))
-    currOdrive = full_reset_and_calibrate(currOdrive)
+
+serialnum = ["205337863548", "2080376D3548"]
+
+for number in serialnum:
+	debug_calibration(number)
+
+
+
+
