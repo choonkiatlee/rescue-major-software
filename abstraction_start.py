@@ -13,6 +13,7 @@ config = {
 
 def full_reset_and_calibrate(odrv0):
 	"""Completely resets the Odrive, calibrates axis0 and configures axis0 to only encoder index search on startup and be ready in AXIS_STATE_CLOSED_LOOP_CONTROL"""
+
 	odrv0.erase_configuration()
 	print("Erased.")
 	try: # Reboot causes loss of connection, use try to supress errors
@@ -22,6 +23,8 @@ def full_reset_and_calibrate(odrv0):
 	print("Rebooted.")
 	odrv0 = odrive.find_any() # Reconnect to the Odrive
 	print("Connected.")
+
+
 	odrv0.axis0.motor.config.pre_calibrated = True # Set all the flags required for pre calibration
 	odrv0.axis0.encoder.config.pre_calibrated = True
 	odrv0.axis0.encoder.config.use_index = True
@@ -34,6 +37,7 @@ def full_reset_and_calibrate(odrv0):
 	print("Calibration complete.")
 	odrv0.save_configuration()
 	odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+	
 	return odrv0
 
 def set_position(odrv0, pos):
@@ -65,7 +69,6 @@ print("Finding an odrive...")
 my_drive = odrive.find_any()
 
 my_drive = full_reset_and_calibrate(my_drive)
-
 # To read a value, simply read the property
 # print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
 

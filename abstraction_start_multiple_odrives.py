@@ -15,7 +15,7 @@ config = {
 	"flipper_gearing" : 5
 }
 
-def full_reset_and_calibrate(odrv0):
+def full_reset_and_calibrate(targetSerial):
 	"""Completely resets the Odrive, calibrates axis1 and configures axis1 to only encoder index search on startup and be ready in AXIS_STATE_CLOSED_LOOP_CONTROL"""
 
 	odrv0 = odrive.find_any(serial_number=targetSerial)
@@ -27,7 +27,6 @@ def full_reset_and_calibrate(odrv0):
 		odrv0.reboot()
 	except:
 		pass
-	print("Rebooted.")
 
 	odrv0 = odrive.find_any(serial_number=targetSerial)
 	print("Rebooted [2/7]")
@@ -95,8 +94,4 @@ def set_velocity(axis, v):
 serialnum = ["205337863548", "2080376D3548"]
 
 for number in serialnum:
-	debug_calibration(number)
-
-
-
-
+	full_reset_and_calibrate(number)
