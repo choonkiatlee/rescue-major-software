@@ -73,6 +73,7 @@ my_drive = full_reset_and_calibrate(my_drive)
 # print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
 
 my_drive.axis0.controller.config.vel_limit = 500000.0
+my_drive.axis0.motor.config.current_lim = 5
 
 print("set drive velocity in m/s or any non-number to quit")
 while(True):
