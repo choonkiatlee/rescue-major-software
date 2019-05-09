@@ -9,6 +9,8 @@ import drive
 from config import *
 
 if __name__ == '__main__':
+    print("nuc_main started")
+
     drive.init()
     handlers.init_handlers()
 
@@ -22,10 +24,14 @@ if __name__ == '__main__':
         while not rospy.core.is_shutdown():
 
             if time.time() > axis_log_time + AXIS_LOG_PERIOD:
-                states = drive.get_states()
-                print(states)
+                try:
+                    states = drive.get_states()
+                    print(states)
+                except Exception as e:
+                    handlers.debug_publish("ERROR in get_states: " + str(e))
+                axis_log_time = time.time()
                 # handlers.axis_states_publish(states)
-            rospy.rostime.wallsleep(0.5)
+            rospy.rostime.wallsleep(0.001)
     except KeyboardInterrupt:
         rospy.logdebug("keyboard interrupt, shutting down")
         rospy.core.signal_shutdown('keyboard interrupt')
