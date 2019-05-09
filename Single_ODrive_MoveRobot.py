@@ -140,6 +140,7 @@ def set_velocity(axis, v):
 	rps = v * config["drive_gearing"] / (2 * 3.1415 * config["wheel_radius"])
 	print(rps * 8192)
 	set_rps(axis, rps)
+	axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
 
 args = parse_args()
@@ -199,5 +200,6 @@ while 1:
 
 	maxrps = 0.5
 	if not testing:
+		
 		set_velocity(my_drive.axis0, speed[1][0]*maxrps*0.01)
-		set_velocity(my_drive.axis1, speed[1][1]*maxrps*0.01)
+		set_velocity(my_drive.axis1, -1*speed[1][1]*maxrps*0.01)
