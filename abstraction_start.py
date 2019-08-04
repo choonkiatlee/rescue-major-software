@@ -81,6 +81,8 @@ my_drive = full_reset_and_calibrate(my_drive)
 my_drive.axis0.controller.config.vel_limit = 500000.0
 my_drive.axis0.motor.config.current_lim = 5
 
+set_velocity(my_drive, 0)
+
 print("set drive velocity in m/s or any non-number to quit")
 while (True):
     velocity = input()

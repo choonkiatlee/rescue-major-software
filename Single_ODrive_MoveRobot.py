@@ -63,8 +63,8 @@ def parse_args():
 def determineSpeed():
 	state = command[0]
 	absSpeed = round(command[1],2)
-	if absSpeed > 100:
-		absSpeed = 100
+	if absSpeed > 150:
+		absSpeed = 150
 
 	speedSetting = [absSpeed,absSpeed]
 	realSpeed = [0,0]
