@@ -181,6 +181,7 @@ while 1:
 	app.update()
 
 	maxrps = 3
+	
 	if not testing:
 		
 		set_velocity(my_drive.axis1, speed[1][0]*maxrps*0.01)

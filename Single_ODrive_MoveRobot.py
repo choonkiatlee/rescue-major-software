@@ -12,6 +12,7 @@ import math
 import argparse
 from tkinter import *
 from pynput import keyboard
+import numpy as np
 testing = False # testing variable
 command = ["Stopped", 0]
 incrament = 0.5
@@ -61,21 +62,22 @@ def parse_args():
 
 
 def determineSpeed():
+	max = 300
 	state = command[0]
 	absSpeed = round(command[1],2)
-	if absSpeed > 150:
-		absSpeed = 150
+	if absSpeed > max:
+		absSpeed = max
 
 	speedSetting = [absSpeed,absSpeed]
 	realSpeed = [0,0]
 
-	if state == "Left":
+	if state == "Right":
 		speedSetting = [-1*absSpeed, absSpeed]
 	elif state == "Forward":
 		speedSetting = [absSpeed, absSpeed]
 	elif state == "Reverse":
 		speedSetting = [-1*absSpeed, -1*absSpeed]
-	elif state == "Right":
+	elif state == "Left":
 		speedSetting = [absSpeed, -1*absSpeed]
 
 	if state != "Stopped":
@@ -133,12 +135,19 @@ def full_reset_and_calibrate(odrv0):
 
 
 def set_rps(axis, rps):
+	'''
+	et axis.controller.config.control_mode = CTRL_MODE_VELOCITY_CONTROL.
+	Set the velocity ramp rate (acceleration): axis.controller.config.vel_ramp_rate = 2000 [counts/s^2]
+	Activate the ramped velocity mode: axis.controller.vel_ramp_enable = True.
+	You can now control the velocity with axis.controller.vel_ramp_target = 5000 [count/s].
+	'''
 	axis.controller.config.control_mode = CTRL_MODE_VELOCITY_CONTROL
+
 	axis.controller.vel_setpoint = rps * 8192
 
 def set_velocity(axis, v):
 	rps = v * config["drive_gearing"] / (2 * 3.1415 * config["wheel_radius"])
-	print(rps * 8192)
+	#print(rps * 8192)
 	set_rps(axis, rps)
 	axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
@@ -188,9 +197,22 @@ listener = keyboard.Listener(
     on_release=on_release)
 listener.start()
 
+def determine_sign(prevSign, currentValue):
+	output = prevSign
+
+	for i, value in enumerate(currentValue):
+		if np.sign(value) != 0:
+			output[i] = np.sign(value)
+
+	return output
 
 
 # control sequence
+previous = 0
+
+threshold = 10	
+sign = [0,0]
+
 while 1:
 	speed = determineSpeed()
 	Direction.config(text = "Direction = " + command[0])
@@ -200,6 +222,18 @@ while 1:
 
 	maxrps = 0.5
 	if not testing:
+
+		current = speed[1][0]
 		
-		set_velocity(my_drive.axis0, speed[1][0]*maxrps*0.01)
-		set_velocity(my_drive.axis1, -1*speed[1][1]*maxrps*0.01)
+		if abs(previous - current) > threshold:
+			current = previous + np.sign(current - previous)*threshold
+			
+		
+		set_velocity(my_drive.axis0, sign[0]*abs(current)*maxrps*0.01)
+		#set_velocity(my_drive.axis1, -1*speed[1][1]*maxrps*0.01)
+
+		previous = current
+		sign = determine_sign(sign, speed[1])
+		print(current)
+
+		
