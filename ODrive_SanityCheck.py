@@ -5,6 +5,8 @@ from odrive.enums import *
 import time
 import math
 import numpy as np
+import readchar
+import sys
 testing = False # testing variable
 command = ["Stopped", 0]
 incrament = 0.5
@@ -132,63 +134,67 @@ def set_velocity_limit(axis, velocity_limit):
 #### PROGRAM NAVIGATION ####################
 ############################################
 
-def initial_setting():
-	global odrv
-	print("-------------- ODRIVE SANITY CHECK --------------\n\n")
-	print("Full Reset and Calibrate? (y/n)")
-
-	while 1:
-		if input() == 'y':
-			odrv = calibrateODrives(serial_list_raw)
-			break
-		elif input() == 'n':
-			odrv = obtainODriveObjects(serial_list_raw)
-			break
-		else:
-			print("Enter either y or n to continue")
-
-	return odrv
-
-def control_loop():
+def initial_setting(debug = False):
 	global odrv
 
-	print("hi")
-	
-	'''
+	if not debug:
+		print("-------------- ODRIVE SANITY CHECK --------------\n\n")
+		print("Full Reset and Calibrate? (y/n)")
+
+		while 1:
+			if input() == 'y':
+				odrv = calibrateODrives(serial_list_raw)
+				break
+			elif input() == 'n':
+				odrv = obtainODriveObjects(serial_list_raw)
+				break
+			else:
+				print("Enter either y or n to continue")
+
+def control_loop(debug = False):
+	global odrv
+
 	previous = 0
-
-	threshold = 10	
-	sign = [0,0]
+	threshold = 0.01	
+	speed = 0
 
 	while 1:
-		speed = determineSpeed()
-		Direction.config(text = "Direction = " + command[0])
-		CurrentSpeed.config(text = "Current speed = left: " + str(speed[1][0]) + "right: " + str(speed[1][1]))
-		Speed.config(text = "Spped setting = left: " + str(speed[0][0]) + "right: " + str(speed[0][1]))
-		app.update()
 
-		maxrps = 0.5
-		if not testing:
+		input_val = readchar.readchar()
+		if input_val == "w":
+			speed += 0.01
+		elif input_val == "s":
+			speed -= 0.01
+		elif input_val == "0":
+			speed = 0
+		elif input_val == "q":
+			break
 
-			current = speed[1][0]
+
+		current = speed
+
+		if current < 0:
+			current = 0
+		
+		if abs(previous - current) > threshold:
+			current = previous + np.sign(current - previous)*threshold
 			
-			if abs(previous - current) > threshold:
-				current = previous + np.sign(current - previous)*threshold
-				
-			
-			set_velocity(my_drive.axis0, sign[0]*abs(current)*maxrps*0.01)
-			set_velocity(my_drive.axis1, sign[1]*abs(current)*maxrps*0.01)
+			if not debug:
+				set_velocity(odrv[0].axis0, current)
+				set_velocity(odrv[0].axis1, current)
+				set_velocity(odrv[1].axis0, current)
+				set_velocity(odrv[1].axis1, current)
 
-			previous = current
-			sign = determine_sign(sign, speed[1])
 			print(current)
-	'''
+
+		previous = current
+
 
 
 # MAIN PROGRAM 
 def main():
-	initial_setting()
-	control_loop()
+	initial_setting(debug = True)
+	control_loop(debug = True)
 
 if __name__ == "__main__":
 	main()
