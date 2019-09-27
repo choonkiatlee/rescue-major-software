@@ -4,9 +4,6 @@ import odrive
 from odrive.enums import *
 import time
 import math
-import argparse
-from tkinter import *
-from pynput import keyboard
 import numpy as np
 testing = False # testing variable
 command = ["Stopped", 0]
@@ -93,9 +90,12 @@ def calibrateODrives(serialIDs):
 	return odrives
 
 def obtainODriveObjects(serialIDs):
+	print("No calibration Mode")
 	odrives = []
 	for i, ID in enumerate(serialIDs):
-		odrives.append(odrive.find_any(ID))
+		print("Searching for ODrive with id = " + ID)
+		odrives.append(odrive.find_any(serial_number=ID))
+		print("Found an ODrive")
 
 	return odrives
 
@@ -138,16 +138,16 @@ def initial_setting():
 	print("Full Reset and Calibrate? (y/n)")
 
 	while 1:
-		if input() == "y":
+		if input() == 'y':
 			odrv = calibrateODrives(serial_list_raw)
 			break
-		elif input() == "n":
+		elif input() == 'n':
 			odrv = obtainODriveObjects(serial_list_raw)
 			break
 		else:
 			print("Enter either y or n to continue")
 
-	return odrives
+	return odrv
 
 def control_loop():
 	global odrv
