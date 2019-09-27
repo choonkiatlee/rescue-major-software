@@ -184,10 +184,10 @@ if args.mode != 'control_test':
 	# print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
 
 	my_drive.axis0.controller.config.vel_limit = 500000.0
-	my_drive.axis0.motor.config.current_lim = 50
+	my_drive.axis0.motor.config.current_lim = 8
 
 	my_drive.axis1.controller.config.vel_limit = 500000.0
-	my_drive.axis1.motor.config.current_lim = 50
+	my_drive.axis1.motor.config.current_lim = 8
 
 else: # if mode == control test
 	testing = True
@@ -230,7 +230,7 @@ while 1:
 			
 		
 		set_velocity(my_drive.axis0, sign[0]*abs(current)*maxrps*0.01)
-		#set_velocity(my_drive.axis1, -1*speed[1][1]*maxrps*0.01)
+		set_velocity(my_drive.axis1, sign[1]*abs(current)*maxrps*0.01)
 
 		previous = current
 		sign = determine_sign(sign, speed[1])
