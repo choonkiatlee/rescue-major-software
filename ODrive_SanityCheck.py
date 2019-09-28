@@ -31,11 +31,11 @@ odrv = None
 # Calibrate one odrive 
 # Input: Serial id of the odrive as a string
 # Output: ODrive object
-def full_reset_and_calibrate(targetSerialID, i=0):
+def full_reset_and_calibrate(targetID, i=0):
 	"""Completely resets the Odrive, calibrates axis0 and configures axis0 to only encoder index search on startup and be ready in AXIS_STATE_CLOSED_LOOP_CONTROL"""
 	print("------------- CALIBRATION ODRV " + str(i) + " -------------\n")
-
-	odrv0 = odrive.find_any(serial_number="209137933548")
+	print("Searching for Serial number: " + targetID)
+	odrv0 = odrive.find_any(serial_number=targetID)
 
 	odrv0.erase_configuration()
 	print("ODRV NO." + str(i) + "  " + "Erased [1/7]")
@@ -44,7 +44,7 @@ def full_reset_and_calibrate(targetSerialID, i=0):
 	except:
 		pass
 	print("ODRV NO." + str(i) + "  " + "Rebooted [2/7]")
-	odrv0 = odrive.find_any() # Reconnect to the Odrive
+	odrv0 = odrive.find_any(serial_number = targetID) # Reconnect to the Odrive
 	print("ODRV NO." + str(i) + "  " + "Connected [3/7]")
 	odrv0.axis0.motor.config.pre_calibrated = True # Set all the flags required for pre calibration
 	odrv0.axis0.encoder.config.pre_calibrated = True
@@ -58,7 +58,7 @@ def full_reset_and_calibrate(targetSerialID, i=0):
 		print(".", end="")
 	odrv0.save_configuration()
 
-	print("ODRV NO." + str(i) + "  " + "AXIS 1. Calibration complete [5/7]\n")
+	print("\nODRV NO." + str(i) + "  " + "AXIS 1. Calibration complete [5/7]\n")
 	print("now will begin calibration sequence for second axis for ODRV NO." + str(i))
 	time.sleep(3)
 	odrv0.axis1.motor.config.pre_calibrated = True # Set all the flags required for pre calibration
@@ -72,7 +72,7 @@ def full_reset_and_calibrate(targetSerialID, i=0):
 		time.sleep(0.5)
 		print(".", end="")
 
-	print("ODRV NO." + str(i) + "  " + "AXIS 2. Calibration 2 complete [7/7]")
+	print("\nODRV NO." + str(i) + "  " + "AXIS 2. Calibration 2 complete [7/7]")
 
 	#closed loop control for both axis
 	odrv0.save_configuration()
@@ -142,10 +142,11 @@ def initial_setting(debug = False):
 		print("Full Reset and Calibrate? (y/n)")
 
 		while 1:
-			if input() == 'y':
+			value = input()
+			if value == 'y':
 				odrv = calibrateODrives(serial_list_raw)
 				break
-			elif input() == 'n':
+			elif value == 'n':
 				odrv = obtainODriveObjects(serial_list_raw)
 				break
 			else:
@@ -153,18 +154,30 @@ def initial_setting(debug = False):
 
 def control_loop(debug = False):
 	global odrv
+	
+	print("Control Loop: Press Enter to Begin")
+	input()
 
 	previous = 0
-	threshold = 0.01	
 	speed = 0
+	incrament = 0.0002
+	threshold = incrament * 10
 
+
+	max_velocity = 500000
+
+	set_velocity_limit(odrv[0].axis0, max_velocity)
+	set_velocity_limit(odrv[0].axis1, max_velocity)
+	set_velocity_limit(odrv[1].axis0, max_velocity)
+	set_velocity_limit(odrv[1].axis1, max_velocity)
 	while 1:
 
 		input_val = readchar.readchar()
+		print(input_val)
 		if input_val == "w":
-			speed += 0.01
+			speed += incrament
 		elif input_val == "s":
-			speed -= 0.01
+			speed -= incrament
 		elif input_val == "0":
 			speed = 0
 		elif input_val == "q":
@@ -179,13 +192,13 @@ def control_loop(debug = False):
 		if abs(previous - current) > threshold:
 			current = previous + np.sign(current - previous)*threshold
 			
-			if not debug:
-				set_velocity(odrv[0].axis0, current)
-				set_velocity(odrv[0].axis1, current)
-				set_velocity(odrv[1].axis0, current)
-				set_velocity(odrv[1].axis1, current)
+		if not debug:
+			set_rps(odrv[0].axis0, current, 80)
+			set_rps(odrv[0].axis1, current, 80)
+			set_rps(odrv[1].axis0, current, 80)
+			set_rps(odrv[1].axis1, current, 80)
 
-			print(current)
+		print(current)
 
 		previous = current
 
@@ -193,8 +206,8 @@ def control_loop(debug = False):
 
 # MAIN PROGRAM 
 def main():
-	initial_setting(debug = True)
-	control_loop(debug = True)
+	initial_setting(debug = False)
+	control_loop(debug = False)
 
 if __name__ == "__main__":
 	main()
