@@ -172,8 +172,8 @@ def control_loop(debug = False):
 		set_velocity_limit(odrv[1].axis0, max_velocity)
 		set_velocity_limit(odrv[1].axis1, max_velocity)
 
-		rightTrack = odrv[0].axis0
-		leftTrack = odrv[0].axis1
+		rightTrack = odrv[0].axis1
+		leftTrack = odrv[0].axis0
 		frontFlipper = odrv[1].axis0
 		rearFlipper = odrv[1].axis1
 
@@ -228,7 +228,7 @@ def control_loop(debug = False):
 		if not debug:
 
 			if mode == 1:
-				set_rps(rightTrack, current, config['drive_gearing'])
+				set_rps(rightTrack, -1* current, config['drive_gearing'])
 				set_rps(leftTrack, current, config['drive_gearing'])
 				set_rps(frontFlipper, 0, config['flipper_gearing'])
 				set_rps(rearFlipper, 0, config['flipper_gearing'])
