@@ -166,22 +166,55 @@ def control_loop(debug = False):
 
 	max_velocity = 500000
 
-	set_velocity_limit(odrv[0].axis0, max_velocity)
-	set_velocity_limit(odrv[0].axis1, max_velocity)
-	set_velocity_limit(odrv[1].axis0, max_velocity)
-	set_velocity_limit(odrv[1].axis1, max_velocity)
+	if not debug:
+		set_velocity_limit(odrv[0].axis0, max_velocity)
+		set_velocity_limit(odrv[0].axis1, max_velocity)
+		set_velocity_limit(odrv[1].axis0, max_velocity)
+		set_velocity_limit(odrv[1].axis1, max_velocity)
+
+		rightTrack = odrv[0].axis0
+		leftTrack = odrv[0].axis1
+		frontFlipper = odrv[1].axis0
+		rearFlipper = odrv[1].axis1
+
+	mode = 0
+
+	select = ["Move FWD", "Move Left Track", "Move Right Track", "Move Front Flipper", "Move Rear Flipper"]
 	while 1:
 
+	
+
 		input_val = readchar.readchar()
-		print(input_val)
-		if input_val == "w":
+
+		if input_val == "1":
+			mode = 1
+			print("--  MODE : " + select[mode - 1])
+		elif input_val == "2":
+			mode = 2
+			print("--  MODE : " + select[mode - 1])
+		elif input_val == "3":
+			mode = 3
+			print("--  MODE : " + select[mode - 1])
+		elif input_val == "4":
+			mode = 4
+			print("--  MODE : " + select[mode - 1])
+		elif input_val == "5":
+			mode = 5
+			print("--  MODE : " + select[mode - 1])
+
+		elif input_val == "w":
 			speed += incrament
+			print("speed INCREASE")
 		elif input_val == "s":
 			speed -= incrament
+			print("speed DECREASE")
 		elif input_val == "0":
 			speed = 0
+			print("speed ZERO")
 		elif input_val == "q":
 			break
+		else:
+			print("No command parsed")
 
 
 		current = speed
@@ -193,12 +226,38 @@ def control_loop(debug = False):
 			current = previous + np.sign(current - previous)*threshold
 			
 		if not debug:
-			set_rps(odrv[0].axis0, current, 80)
-			set_rps(odrv[0].axis1, current, 80)
-			set_rps(odrv[1].axis0, current, 80)
-			set_rps(odrv[1].axis1, current, 80)
 
-		print(current)
+			if mode == 1:
+				set_rps(rightTrack, current, config['drive_gearing'])
+				set_rps(leftTrack, current, config['drive_gearing'])
+				set_rps(frontFlipper, 0, config['flipper_gearing'])
+				set_rps(rearFlipper, 0, config['flipper_gearing'])
+
+			elif mode == 2:
+				set_rps(rightTrack, current, config['drive_gearing'])
+				set_rps(leftTrack, 0, config['drive_gearing'])
+				set_rps(frontFlipper, 0, config['flipper_gearing'])
+				set_rps(rearFlipper, 0, config['flipper_gearing'])
+
+			elif mode == 3:
+				set_rps(rightTrack, 0, config['drive_gearing'])
+				set_rps(leftTrack, current, config['drive_gearing'])
+				set_rps(frontFlipper, 0, config['flipper_gearing'])
+				set_rps(rearFlipper, 0, config['flipper_gearing'])
+
+			elif mode == 4:
+				set_rps(rightTrack, 0, config['drive_gearing'])
+				set_rps(leftTrack, 0, config['drive_gearing'])
+				set_rps(frontFlipper, current, config['flipper_gearing'])
+				set_rps(rearFlipper, 0, config['flipper_gearing'])
+
+			elif mode == 5:
+				set_rps(rightTrack, 0, config['drive_gearing'])
+				set_rps(leftTrack, 0, config['drive_gearing'])
+				set_rps(frontFlipper, 0, config['flipper_gearing'])
+				set_rps(rearFlipper, current, config['flipper_gearing'])
+
+		print("speed is: " + str(current))
 
 		previous = current
 
