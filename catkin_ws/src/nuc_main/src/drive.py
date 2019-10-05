@@ -16,7 +16,7 @@ def full_reset_and_calibrate_all():
     on startup and be ready in AXIS_STATE_CLOSED_LOOP_CONTROL"""
 
     print("Starting full reset and calibrate")
-    for drive_name, drive in odrives:
+    for drive_name, drive in odrives.items():
         drive_cfg = config.ODRIVES[drive_name]
         drive.erase_configuration()
         print("Erased odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
@@ -28,7 +28,7 @@ def full_reset_and_calibrate_all():
         print("Rebooted odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
     connect_all()
 
-    for drive_name, drive in odrives:
+    for drive_name, drive in odrives.items():
         drive_cfg = config.ODRIVES[drive_name]
         for axis_id in range(2):
             if axis_id == 0:
@@ -54,7 +54,7 @@ def full_reset_and_calibrate_all():
 
 
 def stop_all():
-    for drive_name, drive in odrives:
+    for drive_name, drive in odrives.items():
         set_axis_rps(drive.axis0, 0)
         set_axis_rps(drive.axis1, 0)
     print("Stopped all odrives")
@@ -170,8 +170,8 @@ def set_curr_limits(drive, flipper):
 
 def init():
     connect_all()
-    for my_drive in odrives:
-        print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
+    for drive_name, drive in odrives.items():
+        print("Bus voltage is " + str(drive.vbus_voltage) + "V")
     set_all_limits()
 
 
@@ -185,7 +185,7 @@ def connect_all():
     global odrives
     odrives = []
     print("Starting connect to all")
-    for drive_name, drive_cfg in config.ODRIVES:
+    for drive_name, drive_cfg in config.ODRIVES.items():
         print("Finding odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
         odrives.append(odrive.find_any(serial_number=drive_cfg["SERIAL_NO"]))
         print("Found odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
