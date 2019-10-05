@@ -5,9 +5,9 @@ import odrive
 from odrive.enums import *
 import time
 import config
+from tabulate import tabulate
 
 odrives = {}
-axis_states = []
 
 
 def full_reset_and_calibrate_all():
@@ -42,11 +42,14 @@ def full_reset_and_calibrate_all():
             axis.config.startup_closed_loop_control = True
             axis.motor.config.current_lim = 50
             axis.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # Calibrate
-            print("Started calibration of odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ") axis " + str(axis_id), end="")
+            print(
+                "Started calibration of odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ") axis " + str(axis_id),
+                end="")
             while axis.current_state != AXIS_STATE_IDLE:  # Wait for calibration to be done
                 time.sleep(0.5)
                 print(".", end="")
-            print("\n Calibration of odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ") axis " + str(axis_id) + " complete")
+            print("\n Calibration of odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ") axis " + str(
+                axis_id) + " complete")
             drive.save_configuration()
             axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
     print("Calibrations complete")
@@ -105,8 +108,10 @@ def drive_distance(distance, angular_distance):
         distance_r = distance
     axes = (odrives["DRIVE"].axis0, odrives["DRIVE"].axis1)
 
-    add_axis_distance(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]], distance_l * config.ODRIVES["DRIVE"]["LEFT"]["DIRECTION"])
-    add_axis_distance(axes[config.ODRIVES["DRIVE"]["RIGHT"]["AXIS"]], distance_r * config.ODRIVES["DRIVE"]["RIGHT"]["DIRECTION"])
+    add_axis_distance(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]],
+                      distance_l * config.ODRIVES["DRIVE"]["LEFT"]["DIRECTION"])
+    add_axis_distance(axes[config.ODRIVES["DRIVE"]["RIGHT"]["AXIS"]],
+                      distance_r * config.ODRIVES["DRIVE"]["RIGHT"]["DIRECTION"])
 
 
 def drive_velocity(speed, angular_speed):
@@ -121,9 +126,11 @@ def drive_velocity(speed, angular_speed):
         speed_r = speed
     axes = (odrives["DRIVE"].axis0, odrives["DRIVE"].axis1)
 
-    set_axis_drive_velocity(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]], speed_l * config.ODRIVES["DRIVE"]["LEFT"]["DIRECTION"])
+    set_axis_drive_velocity(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]],
+                            speed_l * config.ODRIVES["DRIVE"]["LEFT"]["DIRECTION"])
 
-    set_axis_drive_velocity(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]], speed_r * config.ODRIVES["DRIVE"]["RIGHT"]["DIRECTION"])
+    set_axis_drive_velocity(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]],
+                            speed_r * config.ODRIVES["DRIVE"]["RIGHT"]["DIRECTION"])
 
 
 def flipper_position(front, rear):
@@ -145,11 +152,15 @@ def set_acc_limits(drive, flipper):
     odrives["DRIVE"].axis1.controller.config.accel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
     odrives["DRIVE"].axis1.controller.config.decel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
 
-    odrives["DRIVE"].axis0.controller.config.accel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
-    odrives["DRIVE"].axis0.controller.config.decel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
+    odrives["DRIVE"].axis0.controller.config.accel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE[
+        "CPR"]
+    odrives["DRIVE"].axis0.controller.config.decel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE[
+        "CPR"]
 
-    odrives["DRIVE"].axis1.controller.config.accel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
-    odrives["DRIVE"].axis1.controller.config.decel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
+    odrives["DRIVE"].axis1.controller.config.accel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE[
+        "CPR"]
+    odrives["DRIVE"].axis1.controller.config.decel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE[
+        "CPR"]
 
 
 def set_vel_limits(drive, flipper):  # IN REVOLUTIONS PER SECOND
@@ -158,8 +169,10 @@ def set_vel_limits(drive, flipper):  # IN REVOLUTIONS PER SECOND
     odrives["DRIVE"].axis0.controller.config.vel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
     odrives["DRIVE"].axis1.controller.config.vel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
 
-    odrives["FLIPPER"].axis0.controller.config.vel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
-    odrives["FLIPPER"].axis1.controller.config.vel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
+    odrives["FLIPPER"].axis0.controller.config.vel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE[
+        "CPR"]
+    odrives["FLIPPER"].axis1.controller.config.vel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE[
+        "CPR"]
 
 
 def set_curr_limits(drive, flipper):
@@ -194,3 +207,36 @@ def connect_all():
         odrives[drive_name] = odrive.find_any(serial_number=drive_cfg["SERIAL_NO"])
         print("Found odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
     print("Connected to all")
+
+
+def axis_states():
+    axes = {}
+    axes["FRONT_FLIPPER"] = odrives["FLIPPER"].axis0
+    axes["REAR_FLIPPER"] = odrives["FLIPPER"].axis1
+    axes["LEFT_DRIVE"] = odrives["DRIVE"].axis0
+    axes["RIGHT_DRIVE"] = odrives["DRIVE"].axis1
+    
+    axis_info = []
+    
+    for name, axis in axes.items():
+        axis_info.append(
+            [
+                name,
+                AXIS_STATE(axis.current_state),
+                CTRL_MODE(axis.controller.config.control_mode),
+                axis.controller.pos_setpoint,
+                axis.motor.config.current_lim,
+                axis.controller.current_setpoint,
+                axis.controller.config.vel_limit
+            ],
+        )
+
+    print(tabulate(axis_info, ["NAME", "AXIS_STATE", "CTRL_MODE", "POS_SETPOINT", "CURRENT_LIM", "CURRENT_SETPOINT", "VEL_LIM"]))
+
+
+def CTRL_MODE(number):
+    return list(config.CTRL_MODES_ENUM.keys())[list(config.CTRL_MODES_ENUM.values()).index(number)]
+
+
+def AXIS_STATE(number):
+    return list(config.AXIS_STATES_ENUM.keys())[list(config.AXIS_STATES_ENUM.values()).index(number)]
