@@ -153,6 +153,8 @@ def set_acc_limits(drive, flipper):
 
 
 def set_vel_limits(drive, flipper):  # IN REVOLUTIONS PER SECOND
+    global odrives
+
     odrives["DRIVE"].axis0.controller.config.vel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
     odrives["DRIVE"].axis1.controller.config.vel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
 
@@ -161,6 +163,8 @@ def set_vel_limits(drive, flipper):  # IN REVOLUTIONS PER SECOND
 
 
 def set_curr_limits(drive, flipper):
+    global odrives
+
     odrives["DRIVE"].axis0.motor.config.current_lim = drive
     odrives["DRIVE"].axis1.motor.config.current_lim = drive
 
