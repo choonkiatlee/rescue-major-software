@@ -227,11 +227,14 @@ def axis_states():
                 axis.controller.pos_setpoint,
                 axis.motor.config.current_lim,
                 axis.controller.current_setpoint,
-                axis.controller.config.vel_limit
+                axis.controller.config.vel_limit,
+                hex(axis.error),
+                hex(axis.motor.error),
+                hex(axis.controller.error)
             ],
         )
 
-    print(tabulate(axis_info, ["NAME", "AXIS_STATE", "CTRL_MODE", "POS_SETPOINT", "CURRENT_LIM", "CURRENT_SETPOINT", "VEL_LIM"]))
+    print(tabulate(axis_info, ["NAME", "AXIS_STATE", "CTRL_MODE", "POS_SETPOINT", "CURRENT_LIM", "CURRENT_SETPOINT", "VEL_LIM", "ER", "M_ER", "C_ER"]))
 
 
 def CTRL_MODE(number):
