@@ -183,10 +183,10 @@ def set_all_limits():
 
 def connect_all():
     global odrives
-    odrives = []
+    odrives = {}
     print("Starting connect to all")
     for drive_name, drive_cfg in config.ODRIVES.items():
         print("Finding odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
-        odrives.append(odrive.find_any(serial_number=drive_cfg["SERIAL_NO"]))
+        odrives[drive_name] = odrive.find_any(serial_number=drive_cfg["SERIAL_NO"])
         print("Found odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
     print("Connected to all")
