@@ -11,7 +11,7 @@ DRIVE = {
 
 ODRIVES = {
     "FLIPPER": {
-        "SERIAL_NO": 123456789,
+        "SERIAL_NO": "336631563536",
         "SERIAL_PORT": "serial:/dev/ttyACM0",
         "FRONT": {
             "AXIS": 0,
@@ -23,7 +23,7 @@ ODRIVES = {
         }
     },
     "DRIVE": {
-        "SERIAL_NO": 987654321,
+        "SERIAL_NO": "209137933548",
         "SERIAL_PORT": "serial:/dev/ttyACM1",
         "LEFT": {
             "AXIS": 0,
