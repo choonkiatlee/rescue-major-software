@@ -1,51 +1,40 @@
 from __future__ import print_function, division
 
+import math
 import odrive
 from odrive.enums import *
 import time
-import os
-from fibre.utils import Event, Logger
-import time
-import sys
+import config
 
-from config import *
-
-odrives = []
-positions = []
+odrives = {}
 axis_states = []
-connected = False
 
 
 def full_reset_and_calibrate_all():
     global odrives
-    global positions
-    global connected
     """Completely resets all odrives, calibrates axis0 and configures axis0 to only encoder index search
     on startup and be ready in AXIS_STATE_CLOSED_LOOP_CONTROL"""
-    connected = False
-    print("Erased [1/5]")
-    for odrive_id, my_drive in enumerate(odrives):
-        my_drive.erase_configuration()
-        print("Erased odrive %d" % odrive_id)
-        try:  # Reboot causes loss of connection, use try to supress errors
-            my_drive.reboot()
-        except Exception as e:
-            print("Suppressed error during reboot: " + str(e))
-            pass
-    positions = []
-    print("Rebooted [2/5]")
-    connect_all()
-    print("Connected [3/5]")
 
-    for odrive_id, axes, my_drive in zip(range(len(odrives)), CONNECTED_AXES, odrives):
-        positions.append((0, 0))
+    print("Starting full reset and calibrate")
+    for drive_name, drive in odrives:
+        drive_cfg = config.ODRIVES[drive_name]
+        drive.erase_configuration()
+        print("Erased odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
+        try:  # Reboot causes loss of connection, use try to supress errors
+            drive.reboot()
+        except Exception as e:
+            print("Suppressed error during reboot of " + drive_name + "(" + drive_cfg["SERIAL_NO"] + "): " + str(e))
+            pass
+        print("Rebooted odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
+    connect_all()
+
+    for drive_name, drive in odrives:
+        drive_cfg = config.ODRIVES[drive_name]
         for axis_id in range(2):
-            if axes[axis_id] == False:
-                continue
             if axis_id == 0:
-                axis = my_drive.axis0
+                axis = drive.axis0
             else:
-                axis = my_drive.axis1
+                axis = drive.axis1
             axis.motor.config.pre_calibrated = True  # Set all the flags required for pre calibration
             axis.encoder.config.pre_calibrated = True
             axis.encoder.config.use_index = True
@@ -53,44 +42,22 @@ def full_reset_and_calibrate_all():
             axis.config.startup_closed_loop_control = True
             axis.motor.config.current_lim = 50
             axis.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # Calibrate
-            print("Started calibration of odrive %d axis %d" % (odrive_id, axis_id), end="")
+            print("Started calibration of odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ") axis " + str(axis_id), end="")
             while axis.current_state != AXIS_STATE_IDLE:  # Wait for calibration to be done
-                time.sleep(0.1)
+                time.sleep(0.5)
                 print(".", end="")
-                sys.stdout.flush()
-            print("\n Calibration of odrive %d axis %d complete" % (odrive_id, axis_id))
-            my_drive.save_configuration()
+            print("\n Calibration of odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ") axis " + str(axis_id) + " complete")
+            drive.save_configuration()
             axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-    print("Calibrations complete [5/5]")
-    init_axis_states()
-    connected = True
+    print("Calibrations complete")
     set_all_limits()
 
 
 def stop_all():
-    for axes, my_drive in zip(CONNECTED_AXES, odrives):
-        for axis_id in range(2):
-            if axes[axis_id] == False:
-                continue
-            if axis_id == 0:
-                axis = my_drive.axis0
-            else:
-                axis = my_drive.axis1
-            set_axis_rps(axis, 0)
-
-
-def position_test():
-    while True:
-        for my_drive in odrives:
-            for axis in (my_drive.axis0, my_drive.axis1):
-                set_axis_position(axis, 0)
-                time.sleep(0.5)
-                set_axis_position(axis, 4096)
-                time.sleep(0.5)
-                set_axis_position(axis, 0)
-                time.sleep(0.5)
-                set_axis_position(axis, -4096)
-                time.sleep(0.5)
+    for drive_name, drive in odrives:
+        set_axis_rps(drive.axis0, 0)
+        set_axis_rps(drive.axis1, 0)
+    print("Stopped all odrives")
 
 
 def set_axis_position(axis, pos):
@@ -106,162 +73,120 @@ def add_axis_position(axis, pos):
 
 
 def add_axis_distance(axis, dis):
-    pos = dis * DRIVE_GEARING / (2 * np.pi * WHEEL_RADIUS) * RADIAN
+    pos = dis * config.DRIVE["DRIVE_GEARING"] / (2 * math.pi * config.DRIVE["WHEEL_RADIUS"]) * config.DRIVE["RADIAN"]
     pos = add_axis_position(axis, pos)
-    return pos / DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
+    return pos / config.DRIVE["DRIVE_GEARING"] * (2 * math.pi * config.DRIVE["WHEEL_RADIUS"]) / config.DRIVE["RADIAN"]
 
 
 def set_axis_rps(axis, rps):
     axis.controller.config.control_mode = CTRL_MODE_VELOCITY_CONTROL
-    axis.controller.vel_setpoint = rps * RADIAN
+    axis.controller.vel_setpoint = rps * config.DRIVE["RADIAN"]
 
 
 def set_axis_drive_velocity(axis, v):
-    rps = v * DRIVE_GEARING / (2 * np.pi * WHEEL_RADIUS)
-    print(v, rps)
+    rps = v * config.DRIVE["DRIVE_GEARING"] / (2 * math.pi * config.DRIVE["WHEEL_RADIUS"])
     set_axis_rps(axis, rps)
 
 
 def set_axis_flipper_velocity(axis, v):
-    rps = v * FLIPPER_GEARING
+    rps = v * config.DRIVE["FLIPPER_GEARING"]
     set_axis_rps(axis, rps)
 
 
 def drive_distance(distance, angular_distance):
     if abs(angular_distance) > 1e-6:
         radius = distance / angular_distance
-        radiusL = radius + TRACKS_SEPARATION / 2
-        radiusR = radius - TRACKS_SEPARATION / 2
-        distanceL = radiusL * angular_distance
-        distanceR = radiusR * angular_distance
+        radius_l = radius + config.DRIVE["TRACKS_SEPARATION"] / 2
+        radius_r = radius - config.DRIVE["TRACKS_SEPARATION"] / 2
+        distance_l = radius_l * angular_distance
+        distance_r = radius_r * angular_distance
     else:
-        distanceL = distance
-        distanceR = distance
-    axes = (odrives[ODRIVE_DRIVE_ID].axis0, odrives[ODRIVE_DRIVE_ID].axis1)
+        distance_l = distance
+        distance_r = distance
+    axes = (odrives["DRIVE"].axis0, odrives["DRIVE"].axis1)
 
-    axis_states[ODRIVE_DRIVE_ID][DRIVE_LEFT_AXIS][AXIS_LOG_ID_POS_SET] =\
-        add_axis_distance(axes[DRIVE_LEFT_AXIS], distanceL * DRIVE_LEFT_DIR)
-    axis_states[ODRIVE_DRIVE_ID][DRIVE_LEFT_AXIS][AXIS_LOG_ID_VEL_SET] =\
-        axes[DRIVE_LEFT_AXIS].controller.config.acc_limit / DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
-
-    axis_states[ODRIVE_DRIVE_ID][DRIVE_RIGHT_AXIS][AXIS_LOG_ID_POS_SET] =\
-        add_axis_distance(axes[DRIVE_RIGHT_AXIS], distanceR * DRIVE_RIGHT_DIR)
-    axis_states[ODRIVE_DRIVE_ID][DRIVE_RIGHT_AXIS][AXIS_LOG_ID_VEL_SET] =\
-        axes[DRIVE_RIGHT_AXIS].controller.config.acc_limit / DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
+    add_axis_distance(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]], distance_l * config.ODRIVES["DRIVE"]["LEFT"]["DIRECTION"])
+    add_axis_distance(axes[config.ODRIVES["DRIVE"]["RIGHT"]["AXIS"]], distance_r * config.ODRIVES["DRIVE"]["RIGHT"]["DIRECTION"])
 
 
 def drive_velocity(speed, angular_speed):
     if abs(angular_speed) > 1e-6:
         radius = speed / angular_speed
-        radiusL = radius + TRACKS_SEPARATION / 2
-        radiusR = radius - TRACKS_SEPARATION / 2
-        speedL = radiusL * angular_speed
-        speedR = radiusR * angular_speed
+        radius_l = radius + config.DRIVE["TRACKS_SEPARATION"] / 2
+        radius_r = radius - config.DRIVE["TRACKS_SEPARATION"] / 2
+        speed_l = radius_l * angular_speed
+        speed_r = radius_r * angular_speed
     else:
-        speedL = speed
-        speedR = speed
-    axes = (odrives[ODRIVE_DRIVE_ID].axis0, odrives[ODRIVE_DRIVE_ID].axis1)
+        speed_l = speed
+        speed_r = speed
+    axes = (odrives["DRIVE"].axis0, odrives["DRIVE"].axis1)
 
-    axis_states[ODRIVE_DRIVE_ID][DRIVE_LEFT_AXIS][AXIS_LOG_ID_VEL_SET] = speedL
-    set_axis_drive_velocity(axes[DRIVE_LEFT_AXIS], speedL * DRIVE_LEFT_DIR)
+    set_axis_drive_velocity(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]], speed_l * config.ODRIVES["DRIVE"]["LEFT"]["DIRECTION"])
 
-    axis_states[ODRIVE_DRIVE_ID][DRIVE_RIGHT_AXIS][AXIS_LOG_ID_VEL_SET] = speedR
-    set_axis_drive_velocity(axes[DRIVE_RIGHT_AXIS], speedR * DRIVE_RIGHT_DIR)
+    set_axis_drive_velocity(axes[config.ODRIVES["DRIVE"]["LEFT"]["AXIS"]], speed_r * config.ODRIVES["DRIVE"]["RIGHT"]["DIRECTION"])
 
 
-def flipper_position(pos_lb, pos_lf, pos_rf, pos_rb):
-    axes = tuple((odrives[i].axis0, odrives[i].axis1) for i in range(len(odrives)))
-    for FL, pos, dir in zip((FLIPPER_LB, FLIPPER_LF, FLIPPER_RF, FLIPPER_RB), (pos_lb, pos_lf, pos_rf, pos_rb),
-                            (FLIPPER_LB_DIR, FLIPPER_LF_DIR, FLIPPER_RF_DIR, FLIPPER_RB_DIR)):
-        axis_states[FL[0]][FL[1]][AXIS_LOG_ID_POS_SET] = pos
-        set_axis_position(axes[FL[0]][FL[1]], pos * dir)
-        axis_states[FL[0]][FL[1]][AXIS_LOG_ID_VEL_SET] =\
-            axes[DRIVE_RIGHT_AXIS].controller.config.acc_limit / DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
+def flipper_position(front, rear):
+    axes = (odrives["FLIPPER"].axis0, odrives["FLIPPER"].axis1)
+    set_axis_position(axes[config.ODRIVES["FLIPPER"]["FRONT"]["AXIS"]], front)
+    set_axis_position(axes[config.ODRIVES["FLIPPER"]["REAR"]["AXIS"]], rear)
 
 
-def flipper_velocity(vel_lb, vel_lf, vel_rf, vel_rb):
-    axes = tuple((odrives[i].axis0, odrives[i].axis1) for i in range(len(odrives)))
-    for FL, vel, dir in zip((FLIPPER_LB, FLIPPER_LF, FLIPPER_RF, FLIPPER_RB), (vel_lb, vel_lf, vel_rf, vel_rb),
-                            (FLIPPER_LB_DIR, FLIPPER_LF_DIR, FLIPPER_RF_DIR, FLIPPER_RB_DIR)):
-        axis_states[FL[0]][FL[1]][AXIS_LOG_ID_VEL_SET] = vel
-        set_axis_flipper_velocity(axes[FL[0]][FL[1]], vel * dir)
+def flipper_velocity(front, rear):
+    axes = (odrives["FLIPPER"].axis0, odrives["FLIPPER"].axis1)
+    set_axis_flipper_velocity(axes[config.ODRIVES["FLIPPER"]["FRONT"]["AXIS"]], front)
+    set_axis_flipper_velocity(axes[config.ODRIVES["FLIPPER"]["REAR"]["AXIS"]], rear)
 
 
-def init_axis_states():
-    global axis_states
-    axis_states = []
-    for my_drive in odrives:
-        axis_states.append([[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]])
+def set_acc_limits(drive, flipper):
+    odrives["DRIVE"].axis0.controller.config.accel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
+    odrives["DRIVE"].axis0.controller.config.decel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
+
+    odrives["DRIVE"].axis1.controller.config.accel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
+    odrives["DRIVE"].axis1.controller.config.decel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
+
+    odrives["DRIVE"].axis0.controller.config.accel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
+    odrives["DRIVE"].axis0.controller.config.decel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
+
+    odrives["DRIVE"].axis1.controller.config.accel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
+    odrives["DRIVE"].axis1.controller.config.decel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
 
 
-def get_states():
-    if connected:
-        for i in range(len(odrives)):
-            if CONNECTED_AXES[i][0]:
-                axis_states[i][0][AXIS_LOG_ID_STATE] = odrives[i].axis0.current_state
-                axis_states[i][0][AXIS_LOG_ID_VEL] = odrives[i].axis0.encoder.vel_estimate / \
-                                                     DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
-                axis_states[i][0][AXIS_LOG_ID_POS] = odrives[i].axis0.encoder.pos_estimate / \
-                                                     DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
-            if CONNECTED_AXES[i][1]:
-                axis_states[i][1][AXIS_LOG_ID_STATE] = odrives[i].axis1.current_state
-                axis_states[i][1][AXIS_LOG_ID_VEL] = odrives[i].axis1.encoder.vel_estimate / \
-                                                     DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
-                axis_states[i][1][AXIS_LOG_ID_POS] = odrives[i].axis1.encoder.pos_estimate / \
-                                                     DRIVE_GEARING * (2 * np.pi * WHEEL_RADIUS) / RADIAN
-    return axis_states
+def set_vel_limits(drive, flipper):  # IN REVOLUTIONS PER SECOND
+    odrives["DRIVE"].axis0.controller.config.vel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
+    odrives["DRIVE"].axis1.controller.config.vel_limit = drive * config.DRIVE["DRIVE_GEARING"] * config.DRIVE["CPR"]
+
+    odrives["FLIPPER"].axis0.controller.config.vel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
+    odrives["FLIPPER"].axis1.controller.config.vel_limit = flipper * config.DRIVE["FLIPPER_GEARING"] * config.DRIVE["CPR"]
 
 
-def set_acc_limits(lims):
-    for i, lim in enumerate(lims):
-        if i // 2 >= len(odrives):
-            break
-        if CONNECTED_AXES[i // 2][i % 2]:
-            axis = (odrives[i // 2].axis0, odrives[i // 2].axis1)[i % 2]
-            axis.controller.config.accel_limit = lim * DRIVE_GEARING / (2 * np.pi * WHEEL_RADIUS) * RADIAN
-            axis.controller.config.decel_limit = lim * DRIVE_GEARING / (2 * np.pi * WHEEL_RADIUS) * RADIAN
+def set_curr_limits(drive, flipper):
+    odrives["DRIVE"].axis0.motor.config.current_lim = drive
+    odrives["DRIVE"].axis1.motor.config.current_lim = drive
 
-
-def set_vel_limits(lims):
-    for i, lim in enumerate(lims):
-        if i // 2 >= len(odrives):
-            break
-        if CONNECTED_AXES[i // 2][i % 2]:
-            axis = (odrives[i // 2].axis0, odrives[i // 2].axis1)[i % 2]
-            axis.controller.config.vel_limit = lim * DRIVE_GEARING / (2 * np.pi * WHEEL_RADIUS) * RADIAN
-            print("set as " + str(lim * DRIVE_GEARING / (2 * np.pi * WHEEL_RADIUS) * RADIAN))
-
-
-def set_curr_limits(lims):
-    for i, lim in enumerate(lims):
-        if i // 2 >= len(odrives):
-            break
-        if CONNECTED_AXES[i // 2][i % 2]:
-            axis = (odrives[i // 2].axis0, odrives[i // 2].axis1)[i % 2]
-            axis.motor.config.current_lim = lim
+    odrives["FLIPPER"].axis0.motor.config.current_lim = flipper
+    odrives["FLIPPER"].axis1.motor.config.current_lim = flipper
 
 
 def init():
     connect_all()
-    print("Connected")
     for my_drive in odrives:
         print("Bus voltage is " + str(my_drive.vbus_voltage) + "V")
-    init_axis_states()
     set_all_limits()
 
 
 def set_all_limits():
-    set_vel_limits([MAX_DRIVE_SPEED, MAX_DRIVE_SPEED,
-                    MAX_FLIPPER_SPEED, MAX_FLIPPER_SPEED, MAX_FLIPPER_SPEED, MAX_FLIPPER_SPEED])
-    # set_acc_limits([5]*6)
-    set_curr_limits([MAX_CURRENT] * 6)
+    set_vel_limits(config.DRIVE["MAX_DRIVE_SPEED"], config.DRIVE["MAX_FLIPPER_SPEED"])
+    # set_acc_limits(1)
+    set_curr_limits(config.DRIVE["MAX_CURRENT"], config.DRIVE["MAX_CURRENT"])
 
 
 def connect_all():
     global odrives
-    global connected
     odrives = []
-    for i in range(len(CONNECTED_AXES)):
-        if CONNECTED_AXES[i][0] or CONNECTED_AXES[i][1]:
-            odrives.append(odrive.find_any(serial_number=ODRIVE_SERIAL_NUMS[i]))
-    connected = True
+    print("Starting connect to all")
+    for drive_name, drive_cfg in config.ODRIVES:
+        print("Finding odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
+        odrives.append(odrive.find_any(serial_number=drive_cfg["SERIAL_NO"]))
+        print("Found odrive " + drive_name + "(" + drive_cfg["SERIAL_NO"] + ")")
+    print("Connected to all")
