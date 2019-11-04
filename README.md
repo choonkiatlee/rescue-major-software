@@ -1,4 +1,4 @@
-# :no_entry_sign: DEPRECEATED! Do not use! :no_entry_sign:
+# :no_entry_sign: DEPRECATED! Do not use! :no_entry_sign:
 Rescue Major Software old repository - here just for historical viewing
 
 
