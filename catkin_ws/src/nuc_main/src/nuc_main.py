@@ -6,7 +6,7 @@ import time
 
 import handlers
 import drive
-from config import *
+import config
 
 if __name__ == '__main__':
     print("nuc_main started")
@@ -22,8 +22,7 @@ if __name__ == '__main__':
                    rospy.core.get_node_uri(), os.getpid())
     try:
         while not rospy.core.is_shutdown():
-
-            if time.time() > axis_log_time + AXIS_LOG_PERIOD:
+            if time.time() > axis_log_time + config.AXIS_LOG["PERIOD"]:
                 try:
                     states = drive.get_states()
                     print(states)

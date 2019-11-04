@@ -2,18 +2,9 @@ import rospy  # in PyCharm shows error, solution: https://gavazzi.us/2017/07/31/
 from std_msgs import msg
 
 import drive
-from config import *
 
 
 # SUBSCRIBER CALLBACKS
-
-
-def _position_test_cb(position):
-    try:
-        drive.set_axis_position(drive.odrives[ODRIVE_DRIVE_ID].axis0, position.data)
-    except Exception as e:
-        debug_publish("ERROR in position_test: " + str(e))
-    rospy.loginfo("Recieved on position_test: " + str(position.data))
 
 
 def _commands_cb(command):
@@ -113,21 +104,15 @@ def axis_states_publish(axes):
 
 
 # TEST
-
-
 def _send_back(msg_str):
     debug_publish(msg_str.data)
 
 
 # FUNCTIONS
-
-
 def init_handlers():
     rospy.init_node('nuc_main', anonymous=True)
 
     # SUBSCRIBERS
-
-    rospy.Subscriber("position_test", msg.Float32, _position_test_cb, queue_size=1)
     rospy.Subscriber("commands", msg.Char, _commands_cb, queue_size=100)
     rospy.Subscriber("drive/distance", msg.Float32MultiArray, _drive_distance_cb, queue_size=1)
     rospy.Subscriber("drive/velocity", msg.Float32MultiArray, _drive_velocity_cb, queue_size=1)
@@ -141,7 +126,7 @@ def init_handlers():
     global debug_pub
     debug_pub = rospy.Publisher('debug', msg.String, queue_size=100)
 
-    global axis_state_pub
+    global actual_flipper_pos, actual_drive_pos
     axis_state_pub = rospy.Publisher('drive/axis_states', msg.Float32MultiArray, queue_size=10)
 
 
