@@ -1,5 +1,5 @@
-# rescue-major-software
-Rescue Major Software
+# :no_entry_sign: DEPRECEATED! Do not use! :no_entry_sign:
+Rescue Major Software old repository - here just for historical viewing
 
 
 
